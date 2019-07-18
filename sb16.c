@@ -27,8 +27,6 @@ uint32_t sound_blaster_exist=0;
 uint32_t sb16_version_major=0;
 uint32_t sb16_version_minor=0;
 
-uint8_t sound_buffer[0xFF];
-
 uint8_t read_dsp(void) {
     if(inb(DSP_STATUS)==0x80) {
         return inb(DSP_READ);
