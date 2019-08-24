@@ -36,15 +36,29 @@ uint16_t read_pixel(uint32_t line, uint32_t column) {
     return (vidmem[i]);
 }
 
+void clear_mouse_memory(void) {
+    uint16_t *mouse_memory = (uint16_t *) 0x100000;
+
+    for(int i=0; i<256; i++) {
+        mouse_memory[i]=WHITE;
+    }
+}
+
+
 void clear_screen(void) {
     uint16_t *vidmem = (uint16_t *) (vesa_lfb);  //start of frame buffer, for high speed
 	uint32_t lenght=0;
 
-	lenght=(vesa_x * vesa_y);
+	mouse_cursor_visible=0;
 
+	lenght=(vesa_x * vesa_y);
     for(int i=0; i<lenght; i++) {
-        vidmem[i]=0xFFFF;  //white
+        vidmem[i]=WHITE;
     }
+
+	clear_mouse_memory();
+
+	mouse_cursor_visible=1;
 }
 
 //Drawing functions
@@ -1095,7 +1109,7 @@ void draw_mouse(uint32_t x, uint32_t y) {
 //special
 void p(uint8_t *message) {
     if(print_line==60) {
-        draw_square(0, 0, 800, 600, WHITE);
+        clear_screen();
         print_line=0;
     }
 
@@ -1106,7 +1120,7 @@ void p(uint8_t *message) {
 
 void pv(uint64_t value) {
     if(print_line==60) {
-        draw_square(0, 0, 800, 600, WHITE);
+        clear_screen();
         print_line=0;
     }
 
@@ -1117,7 +1131,7 @@ void pv(uint64_t value) {
 
 void ph(uint32_t value) {
     if(print_line==60) {
-        draw_square(0, 0, 800, 600, WHITE);
+        clear_screen();
         print_line=0;
     }
 
