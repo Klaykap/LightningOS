@@ -1,4 +1,42 @@
 //LIGHTNINGOS
+
+uint32_t mouse_bytes[2];
+uint8_t mouse_cycle=0;
+
+#define MOUSE_NO_BUTTON 0
+#define MOUSE_LEFT 1
+#define MOUSE_RIGHT 2
+#define MOUSE_MIDDLE 3
+#define MOUSE_4TH 4
+#define MOUSE_5TH 5
+#define MOUSE_SCROLL_UP 1
+#define MOUSE_SCROLL_DOWN 2
+
+uint32_t debug_line=0;
+uint32_t debug_column=0;
+void debug_irq1(uint8_t key, uint8_t keycode) {
+	uint8_t message[2];
+
+	if(keycode==KEY_ENTER) {
+		debug_line++;
+		debug_column=0;
+	}
+	else {
+		message[0]=key;
+		message[1]=0;
+
+		print(message, debug_line, debug_column, BLACK);
+
+		if(debug_column==99) {
+			debug_line++;
+			debug_column=0;
+		}
+		else {
+			debug_column++;
+		}
+	}
+}
+
 void irq0_handler(void) {
     outb(0x20, 0x20); //EOI
 }
@@ -8,6 +46,12 @@ void irq1_handler(void) {
 
     if (inb(0x64) & 0x01) {
         keycode = inb(0x60);
+
+		/*if(keycode==KEY_SPACE) {
+			pv(mouse_x);
+			pv(mouse_y);
+			pv(mouse_cycle);
+		}*/
 
         if(keycode==KEY_CAPSLOCK) {
             if(shift==0) {
@@ -79,6 +123,10 @@ void irq1_handler(void) {
             key_ascii = (key_ascii - 32);
         }
 
+		if(keycode<0x81) {
+			debug_irq1(key_ascii, keycode);
+		}
+
     }
 }
 
@@ -137,6 +185,14 @@ void irq11_handler(void) {
 void irq12_handler(void) {
     outb(0xA0, 0x20);
     outb(0x20, 0x20); //EOI
+          
+    mouse_bytes[mouse_cycle++] = inb(0x60);
+ 
+    if (mouse_cycle == 3) {
+		handle_mouse_packet(mouse_bytes[1], mouse_bytes[2], mouse_bytes[0], 0);
+		mouse_cycle = 0;
+	}
+
 }
 
 void irq13_handler(void) {
