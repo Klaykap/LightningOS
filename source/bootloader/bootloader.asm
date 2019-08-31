@@ -66,8 +66,8 @@ main:
   mov bx, 9216  ;offset 9216
   mov ah, 0x02  ;read function
   mov al, 18  ;one head
-  mov ch, 0  ;cylinder 1
-  mov dh, 1  ;head 0
+  mov ch, 0  ;cylinder 0
+  mov dh, 1  ;head 1
   mov cl, 2  ;sector 2
   mov dl, 0x00  ;usb
   int 13h  ;read
@@ -91,7 +91,7 @@ main:
   mov ah, 0x02  ;read function
   mov al, 50  ;one head
   mov ch, 1  ;cylinder 1
-  mov dh, 1  ;head 0
+  mov dh, 1  ;head 1
   mov cl, 2  ;sector 2
   mov dl, 0x00  ;usb
   int 13h  ;read
