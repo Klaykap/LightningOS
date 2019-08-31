@@ -46,16 +46,54 @@ main:
   mov bx, 0x4114  ;graphic mode 800x600 16bpp
   int 0x10  ;start BIOS interrupt
 
-  ;read usb sectors 0 to 50
+  ;loading 104 sectors from usb/cdrom
+
+  ;read usb first head
   mov ax, 0x1000  ;load kernel to 10000h
   mov es, ax  ;load kernel to 10000h
   mov bx, 0  ;offset 0 
   mov ah, 0x02  ;read function
-  mov al, 50  ;50 sectors
-  mov ch, 0  ;track 0
-  mov cl, 2  ;start sector is 2
+  mov al, 18  ;one head
+  mov ch, 0  ;cylinder 0
   mov dh, 0  ;head 0
-  mov dl, 00h  ;usb
+  mov cl, 2  ;start sector is 2
+  mov dl, 0x00  ;usb
+  int 13h  ;read
+
+  ;read usb second head
+  mov ax, 0x1000  ;load kernel to 10000h
+  mov es, ax  ;load kernel to 10000h
+  mov bx, 9216  ;offset 9216
+  mov ah, 0x02  ;read function
+  mov al, 18  ;one head
+  mov ch, 0  ;cylinder 1
+  mov dh, 1  ;head 0
+  mov cl, 2  ;sector 2
+  mov dl, 0x00  ;usb
+  int 13h  ;read
+
+  ;read usb third head
+  mov ax, 0x1000  ;load kernel to 10000h
+  mov es, ax  ;load kernel to 10000h
+  mov bx, 18432  ;offset 18432
+  mov ah, 0x02  ;read function
+  mov al, 18  ;one head
+  mov ch, 1  ;cylinder 1
+  mov dh, 0  ;head 0
+  mov cl, 2  ;sector 2
+  mov dl, 0x00  ;usb
+  int 13h  ;read
+
+  ;read usb fourth head
+  mov ax, 0x1000  ;load kernel to 10000h
+  mov es, ax  ;load kernel to 10000h
+  mov bx, 27648  ;offset 27648
+  mov ah, 0x02  ;read function
+  mov al, 50  ;one head
+  mov ch, 1  ;cylinder 1
+  mov dh, 1  ;head 0
+  mov cl, 2  ;sector 2
+  mov dl, 0x00  ;usb
   int 13h  ;read
 
   jmp load_gdt 
