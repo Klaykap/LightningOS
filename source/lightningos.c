@@ -1,6 +1,7 @@
 //LIGHTNINGOS
 
 #define MOUSE_MEMORY 0x100000
+#define MENU_MEMORY 0x100200
 #define FREE_JUS_MEMORY 0x200000
 #define FBN_MEMORY 0x300000
 #define DESCRIPTION_MEMORY 0x600000
@@ -8,6 +9,8 @@
 #define STARTING 1
 #define DESKTOP 2
 #define MENU 3
+#define HW_INFO 4
+#define POKUS 5
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -19,6 +22,7 @@ uint32_t mouse_x=0;
 uint32_t mouse_y=0;
 
 uint32_t program=0;
+uint32_t background_program=0;
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
@@ -58,11 +62,10 @@ static inline void outl(uint16_t port, uint32_t val) {
 
 #include "drivers/vesa.c"
 
-#include "drivers/pc_speaker.c"
-
 #include "drivers/keyboard.c"
 #include "drivers/mouse.c"
 #include "drivers/ata.c"
+#include "drivers/atapi.c"
 
 #include "drivers/jus.c"
 
@@ -71,12 +74,16 @@ static inline void outl(uint16_t port, uint32_t val) {
 #include "drivers/time.c"
 #include "drivers/pci.c"
 
+#include "drivers/intel_hd_audio.c"
+#include "drivers/pc_speaker.c"
+
 #include "drivers/rtl8139.c"
 
 #include "drivers/usb_uhci.c"
 
 #include "gui/elements.c"
 #include "gui/desktop.c"
+#include "programs/hw_info.c"
 #include "gui/main.c"
  
 void start_lightningos(void) {
@@ -90,13 +97,13 @@ void start_lightningos(void) {
     init_vesa_font();
     clear_screen();
 	p("Graphic initalized: VESA Video Mode");
-    print_var(vesa_x, 0, 36, BLACK);
-    print("x", 0, 39, BLACK);
-    print_var(vesa_y, 0, 40, BLACK);
-    print("x", 0, 43, BLACK);
-    print_var(vesa_bpp, 0, 44, BLACK);
+    print_var(vesa_x, 0, 288, BLACK);
+    print("x", 0, 312, BLACK);
+    print_var(vesa_y, 0, 320, BLACK);
+    print("x", 0, 344, BLACK);
+    print_var(vesa_bpp, 0, 352, BLACK);
     p("Linear frame buffer:");
-    print_hex(vesa_lfb, 1, 20, BLACK);
+    print_hex(vesa_lfb, 10, 160, BLACK);
 
 	p("Setting debug values...");
 	debug_line=10;
@@ -111,17 +118,23 @@ void start_lightningos(void) {
 
 	p("Choosing ATA drive...");
 	outb(0x1F6, 0x40);
-	if(inb(0x1F7) & 0x01) {
+	if(inb(0x3F6) & 0x01) {
 		outb(0x1F6, 0x40);
 	}
 
+	p("Choosing ATAPI drive...");
+	outb(0x176, 0xE0);
+	if(inb(0x376) & 0x01) {
+		outb(0x176, 0xE0);
+	}
+
 	p("Loading JUS fbn informations...");
-	load_fbn();
+	//load_fbn();
 
 	p("Initalizing mouse...");
+	clear_mouse_memory();
 	mouse_initalize();
 	mouse_cycle=0;
-    scan_monitor(0, 0, 16, 16, MOUSE_MEMORY);
 	mouse_x=0;
 	mouse_y=0;
 	handle_irq12=0;
