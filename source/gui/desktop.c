@@ -153,4 +153,24 @@ void delete_window(uint32_t number) {
 	for(int i=0; i<13; i++) {
 		down_line_programs[number].name[i]=0;
 	}
+
+	//erase free window entries
+	for(int i=0; i<5; i++) {
+		if(down_line_programs[i].exist==0) {  //copy next entry to it
+			down_line_programs[i].exist=down_line_programs[i+1].exist;
+			down_line_programs[i].active=down_line_programs[i+1].active;
+			down_line_programs[i].program=down_line_programs[i+1].program;
+			for(int j=0; j<13; j++) {
+				down_line_programs[i].name[j]=down_line_programs[i+1].name[j];
+			}
+
+			//delete next entry
+			down_line_programs[i+1].exist=0;
+			down_line_programs[i+1].active=0;
+			down_line_programs[i+1].program=0;
+			for(int j=0; j<13; j++) {
+				down_line_programs[i+1].name[j]=0;
+			}
+		}
+	}
 }
