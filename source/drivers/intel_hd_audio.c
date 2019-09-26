@@ -42,7 +42,7 @@ void corb_write_command(uint32_t cad, uint32_t nid, uint32_t verb, uint32_t comm
 
 void hda(void) {
 	uint32_t *corb = (uint32_t *) CORB_MEMORY;
-	uint32_t *rirb = (uint32_t *) RIRB_MEMORY;
+	uint64_t *rirb = (uint64_t *) RIRB_MEMORY;
 
 	hda_outl(0x40, CORB_MEMORY);  //CORB buffer
 	hda_outl(0x50, RIRB_MEMORY);  //RIRB buffer
@@ -51,24 +51,25 @@ void hda(void) {
 
 	//write commands into CORB
 	for(int i=0; i<16; i++) {
-		corb_write_command(i, 0, 0xF00, 0);
+		corb_write_command(0, i, 0xF00, 4);
 	}
 
 	hda_outw(0x48, 16); //number of commands to corb
-	hda_outw(0x4A, 0x0080); //reset corb
+
+	hda_outw(0x4A, 0x8000); //reset corb
 
 	wait();
 	wait();
 
+	while(hda_inw(0x4A)!=0x8000) {}  //wait
 	hda_outw(0x4A, 0x0000); //reset corb
 
-	hda_outw(0x58, 16); //number of commands to rirb
-
 	hda_outb(0x5C, (hda_inb(0x5C) | 2));
+	hda_outb(0x5C, (hda_inb(0x5C) & 250));
 	hda_outb(0x4C, (hda_inb(0x4C) | 2));
+	hda_outb(0x4C, (hda_inb(0x4C) & 0xFE));
 
-	wait();
-	wait();
+	while(hda_inw(0x58)==0) {} //here is forever cycle
 
 	for(int i=0; i<20; i++) {
 		pv(rirb[i]);
