@@ -57,12 +57,12 @@ void hda(void) {
 	hda_outw(0x48, 16); //number of commands to corb
 
 	hda_outw(0x4A, 0x8000); //reset corb
-
-	wait();
-	wait();
-
+	hda_inw(0x4A);
 	while(hda_inw(0x4A)!=0x8000) {}  //wait
+
 	hda_outw(0x4A, 0x0000); //reset corb
+	hda_inw(0x4A);
+	while(hda_inw(0x4A)!=0x0000) {}  //wait
 
 	hda_outb(0x5C, (hda_inb(0x5C) | 2));
 	hda_outb(0x5C, (hda_inb(0x5C) & 250));
