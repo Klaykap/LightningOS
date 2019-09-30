@@ -54,22 +54,22 @@ void hda(void) {
 		corb_write_command(0, i, 0xF00, 4);
 	}
 
-	hda_outw(0x48, 16); //number of commands to corb
+	hda_outb(0x48, 1); //number of commands to corb
 
 	hda_outw(0x4A, 0x8000); //reset corb
 	hda_inw(0x4A);
-	while(hda_inw(0x4A)!=0x8000) {}  //wait
+	while( (hda_inw(0x4A) & 0x8000) != 0x8000) {}  //wait
 
 	hda_outw(0x4A, 0x0000); //reset corb
 	hda_inw(0x4A);
-	while(hda_inw(0x4A)!=0x0000) {}  //wait
+	while( (hda_inw(0x4A) & 0x8000) != 0x0000) {}  //wait
 
 	hda_outb(0x5C, (hda_inb(0x5C) | 2));
 	hda_outb(0x5C, (hda_inb(0x5C) & 250));
 	hda_outb(0x4C, (hda_inb(0x4C) | 2));
 	hda_outb(0x4C, (hda_inb(0x4C) & 0xFE));
 
-	while(hda_inw(0x58)==0) {} //here is forever cycle
+	while(hda_inb(0x58)==0) {} //here is forever cycle
 
 	for(int i=0; i<20; i++) {
 		pv(rirb[i]);
