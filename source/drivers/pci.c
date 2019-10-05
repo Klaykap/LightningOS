@@ -35,9 +35,6 @@ uint32_t bar5_value=0;
 uint8_t interrupt_line=0;
 uint8_t interrupt_pin=0;
 
-uint32_t ohci_base[10];
-uint32_t ohci_pointer=0;
-
 uint32_t uhci_base[10];
 uint32_t uhci_bus[10];
 uint32_t uhci_dev[10];
@@ -48,12 +45,19 @@ uint32_t ehci_base[10];
 uint32_t ehci_pointer=0;
 
 #define RTL8139 1
+uint32_t internet_card_exist=0;
 uint32_t internet_card_type=0;
 uint32_t internet_card_base=0;
 uint8_t internet_card_bus=0;
 uint8_t internet_card_device=0;
 uint8_t internet_card_function=0;
 uint32_t internet_irq=0;
+
+uint32_t hda_base=0;
+uint32_t hda_exist=0;
+
+uint32_t ide_exist=0;
+uint32_t ide_base=0;
 
 uint32_t pci_read(uint32_t bus, uint32_t dev, uint32_t func, uint32_t offset, uint32_t lenght) {
     uint32_t value=0;
@@ -88,8 +92,8 @@ uint32_t pci_read(uint32_t bus, uint32_t dev, uint32_t func, uint32_t offset, ui
 
 }
 
-void pci_write(uint32_t bus,uint32_t dev,uint32_t func,uint32_t offset,uint32_t value) {
-    uint32_t address = ( 0x80000000 | (bus<<16) | (dev<<11) | (func<<8) | (offset&0xFC) );
+void pci_write(uint32_t bus, uint32_t dev, uint32_t func, uint32_t offset, uint32_t value) {
+    uint32_t address = ( 0x80000000 | (bus<<16) | (dev<<11) | (func<<8) | (offset & 0xFC) );
 
     outl(0xCF8, address);
     outl(0xCFC, value);
@@ -157,6 +161,10 @@ uint32_t pci_get_interrupt_line(uint32_t bus, uint32_t dev, uint32_t func)  {
 
 uint32_t pci_get_interrupt_pin(uint32_t bus, uint32_t dev, uint32_t func)  {
     return pci_read(bus, dev, func, 0x3C, PCI_SECOND_BYTE);
+}
+
+void pci_set_interrupt(uint32_t bus, uint32_t dev, uint32_t func, uint32_t val)  {
+    return pci_write(bus, dev, func, 0x3C, val);
 }
 
 void pci_scan_device(uint32_t bus, uint32_t dev, uint32_t func) {
@@ -260,8 +268,16 @@ void pci_scan_device(uint32_t bus, uint32_t dev, uint32_t func) {
     interrupt_line=pci_get_interrupt_line(bus, dev, func);
     interrupt_pin=pci_get_interrupt_pin(bus, dev, func);
 
+	//Sound card Intel HD Audio
+	if(class==0x04 && subclass==0x03 && progif==0x00) {
+		hda_exist=1;
+		hda_base=bar0_value;
+		pci_set_interrupt(bus, dev, func, 10);  //IRQ 10
+	}
+
 	//Network card
 	if(class==0x02 && subclass==0x00 && progif==0x00) {
+		internet_card_exist=1;
         internet_card_bus=bus;
         internet_card_device=dev;
         internet_card_function=func;
@@ -273,14 +289,11 @@ void pci_scan_device(uint32_t bus, uint32_t dev, uint32_t func) {
 		}
 	}
 
-	//Usb 1.0 - OHCI
-	if(class==0x0C && subclass==0x03 && progif==0x10) {
-		ohci_base[ohci_pointer]=bar4_value;
-		ohci_pointer++;
-	}
-
 	//Usb 1.1 - UHCI
 	if(class==0x0C && subclass==0x03 && progif==0x00) {
+		if(uhci_pointer==0) {
+			pci_set_interrupt(bus, dev, func, 2);  //IRQ 2 for UHCI USB 1
+		}
 		uhci_base[uhci_pointer]=bar4_value;
 		uhci_bus[uhci_pointer]=bus;
 		uhci_dev[uhci_pointer]=dev;
@@ -294,6 +307,16 @@ void pci_scan_device(uint32_t bus, uint32_t dev, uint32_t func) {
 		ehci_pointer++;
 	}
 
+	//Hard disc
+	if(class==0x01 && subclass==0x01) {
+		if(bar0_value==0 || bar0_value==1) {
+			ata_base=0x1F0;
+		}
+		else {
+			ata_base=bar0_value;
+		}
+	}
+
 }
 
 void pci_scan_all(void) {
@@ -302,13 +325,13 @@ void pci_scan_all(void) {
         for(int device=0; device<32; device++) {
             
             if( (pci_get_header(bus, device, 0) & 0x80) != 0) {
-                for(int function=0; function<8; function++) {   //multi-function device
+                for(int function=0; function<8; function++) { //multi-function device
                     if(pci_get_vendor(bus, device, function) != 0xFFFF) {
                         pci_scan_device(bus, device, function);
                     }
                 }
             }
-            else if (pci_get_vendor(bus, device, 0) != 0xFFFF) {    //single-function device
+            else if (pci_get_vendor(bus, device, 0) != 0xFFFF) {  //single-function device
                 pci_scan_device(bus, device, 0);
             }
 
