@@ -50,28 +50,34 @@ void hda(void) {
 	hda_outl(0x54, 0x00000000);  //RIRB buffer
 
 	//write commands into CORB
-	for(int i=0; i<16; i++) {
-		corb_write_command(0, i, 0xF00, 4);
+	for(int i=0; i<10; i++) {
+		corb_write_command(0, i, 0xF00, 0);
 	}
 
-	hda_outb(0x48, 1); //number of commands to corb
+	pv(hda_inw(0x4A));
 
+	hda_outb(0x48, 10); //number of commands to corb
+
+	hda_inw(0x4A);
 	hda_outw(0x4A, 0x8000); //reset corb
 	hda_inw(0x4A);
-	while( (hda_inw(0x4A) & 0x8000) != 0x8000) {}  //wait
-
+	while( (hda_inw(0x4A) & 0x8000) != 0x8000) { wait(); }  //wait
+p("DEBUG 1");
 	hda_outw(0x4A, 0x0000); //reset corb
 	hda_inw(0x4A);
-	while( (hda_inw(0x4A) & 0x8000) != 0x0000) {}  //wait
+	while( (hda_inw(0x4A) & 0x8000) != 0x0000) { wait(); }  //wait
+p("DEBUG 2");
+	hda_outw(0x58, 0x8000);
 
 	hda_outb(0x5C, (hda_inb(0x5C) | 2));
 	hda_outb(0x5C, (hda_inb(0x5C) & 250));
 	hda_outb(0x4C, (hda_inb(0x4C) | 2));
 	hda_outb(0x4C, (hda_inb(0x4C) & 0xFE));
+p("DEBUG 3");
+	while(hda_inb(0x58)==0) { print_var(hda_inw(0x4A), 10, 10, BLACK); wait(); } //here is forever cycle
 
-	while(hda_inb(0x58)==0) {} //here is forever cycle
-
-	for(int i=0; i<20; i++) {
-		pv(rirb[i]);
+	p("RIRB");
+	for(int i=0; i<10; i++) {
+		ph(rirb[i]);
 	}
 }
