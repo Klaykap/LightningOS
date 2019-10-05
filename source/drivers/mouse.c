@@ -2,6 +2,7 @@
 //This driver work for PS/2 mouse
 
 uint32_t drag_and_drop=0;
+uint8_t mouse_button=0;
 
 #define MOUSE_NO_BUTTON 0
 #define MOUSE_LEFT 1
@@ -14,8 +15,6 @@ uint32_t drag_and_drop=0;
 
 #define MOUSE_READ_PORT 0x60
 #define MOUSE_WRITE_PORT 0x64
-
-uint8_t mouse_button=0;
 
 void mouse_click(uint8_t button);
 void mouse_scroll(uint8_t scroll);
@@ -88,14 +87,27 @@ uint32_t get_mouse_zone(uint32_t y, uint32_t x, uint32_t lenght, uint32_t height
 	}
 }
 
+uint32_t get_mouse_block_line(uint32_t y, uint32_t x, uint32_t lenght) {
+	if(mouse_x>x) {
+		return ( (mouse_x - x) / lenght);
+	}
+	else {
+		return 0;
+	}
+}
+
+uint32_t get_mouse_block_column(uint32_t y, uint32_t x, uint32_t height) {
+	if(mouse_y>y) {
+		return ( (mouse_y - y) / height);
+	}
+	else {
+		return 0;
+	}
+}
+
 void handle_mouse_packet(uint8_t mouse_move_x, uint8_t mouse_move_y, uint8_t mouse_packet_button, uint8_t mouse_packet_scroll) {
 	int test=0;
 
-    if ((mouse_packet_button & 0x80) || (mouse_packet_button & 0x40)) {
-      return;
-    }
-
-    if(mouse_cursor_visible==1) {
         //up
 		if(mouse_move_y<0x80) {
 			draw_monitor(mouse_y, mouse_x, 16, 16, 0x100000);
@@ -112,7 +124,7 @@ void handle_mouse_packet(uint8_t mouse_move_x, uint8_t mouse_move_y, uint8_t mou
 
         //down
 		if(mouse_move_y>0x80) {
-			mouse_move_y = (0x000000FF - mouse_move_y);
+			mouse_move_y = (0xFF - mouse_move_y);
 			draw_monitor(mouse_y, mouse_x, 16, 16, 0x100000);
 			test=(mouse_y + mouse_move_y);
 			if(test > vesa_y) {
@@ -141,7 +153,7 @@ void handle_mouse_packet(uint8_t mouse_move_x, uint8_t mouse_move_y, uint8_t mou
 
         //left
 		if(mouse_move_x>0x80) {
-			mouse_move_x = (0x000000FF - mouse_move_x);
+			mouse_move_x = (0xFF - mouse_move_x);
 			draw_monitor(mouse_y, mouse_x, 16, 16, 0x100000);
 			test=(mouse_x - mouse_move_x);
 			if(test < 0) {
@@ -153,9 +165,8 @@ void handle_mouse_packet(uint8_t mouse_move_x, uint8_t mouse_move_y, uint8_t mou
 			scan_monitor(mouse_y, mouse_x, 16, 16, 0x100000);
 			draw_mouse(mouse_y, mouse_x);
 		}
-    } //end move if
 
-    if ((mouse_packet_scroll & 0x0F)==0x01) {    //scroll up
+    if ((mouse_packet_scroll & 0x01)==0x01) {    //scroll up
         mouse_scroll(MOUSE_SCROLL_UP);
     }
 
@@ -202,4 +213,23 @@ void handle_mouse_packet(uint8_t mouse_move_x, uint8_t mouse_move_y, uint8_t mou
         mouse_button=MOUSE_NO_BUTTON;
 		drag_and_drop=0;
     }
+}
+
+void hide_mouse(void) {
+	if(mouse_cursor_visible==0 || mouse_cursor_visible==2) {
+		return;
+	}
+
+	mouse_cursor_visible=0;
+    draw_monitor(mouse_y, mouse_x, 16, 16, MOUSE_MEMORY);
+}
+
+void show_mouse(void) {
+	if(mouse_cursor_visible==1 || mouse_cursor_visible==2) {
+		return;
+	}
+
+    scan_monitor(mouse_y, mouse_x, 16, 16, MOUSE_MEMORY);
+	draw_mouse(mouse_y, mouse_x);
+	mouse_cursor_visible=1;
 }
