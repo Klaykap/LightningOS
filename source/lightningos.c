@@ -1,16 +1,20 @@
 //LIGHTNINGOS
 
-#define MOUSE_MEMORY 0x100000
-#define MENU_MEMORY 0x100200
-#define FREE_JUS_MEMORY 0x200000
-#define FBN_MEMORY 0x300000
-#define DESCRIPTION_MEMORY 0x600000
+#define MOUSE_MEMORY 0x00100000
+#define MENU_MEMORY 0x00100200
+#define FREE_JUS_MEMORY 0x00200000
+#define FBN_MEMORY 0x00300000
+#define DESCRIPTION_MEMORY 0x00600000
+#define UHCI_MEMORY 0x00700000
+#define CORB_MEMORY 0x00800000
+#define RIRB_MEMORY 0x00900000
 
 #define STARTING 1
 #define DESKTOP 2
 #define MENU 3
 #define HW_INFO 4
-#define POKUS 5
+
+#define CLOSE_PROGRAM 100
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -23,6 +27,9 @@ uint32_t mouse_y=0;
 
 uint32_t program=0;
 uint32_t background_program=0;
+uint32_t hw_info_window_id=0;
+
+uint32_t ata_base=0;
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t ret;
@@ -60,7 +67,11 @@ static inline void outl(uint16_t port, uint32_t val) {
     asm volatile ( "outl %0, %1" : : "a"(val), "Nd"(port) );
 }
 
+void wait(void);
+
 #include "drivers/vesa.c"
+
+#include "drivers/pci.c"
 
 #include "drivers/keyboard.c"
 #include "drivers/mouse.c"
@@ -69,17 +80,16 @@ static inline void outl(uint16_t port, uint32_t val) {
 
 #include "drivers/jus.c"
 
+#include "drivers/usb_uhci.c"
+
 #include "drivers/handlers.c"
 #include "drivers/idt.c"
 #include "drivers/time.c"
-#include "drivers/pci.c"
 
 #include "drivers/intel_hd_audio.c"
 #include "drivers/pc_speaker.c"
 
 #include "drivers/rtl8139.c"
-
-#include "drivers/usb_uhci.c"
 
 #include "gui/elements.c"
 #include "gui/desktop.c"
@@ -91,7 +101,7 @@ void start_lightningos(void) {
 
 	print_line = 0;
 
-	mouse_cursor_visible=0;
+	mouse_cursor_visible=2;  //special value for starting
 
     read_vesa_info();
     init_vesa_font();
@@ -110,6 +120,8 @@ void start_lightningos(void) {
 	debug_column=0;
 
 	p("Scanning PCI...");
+	uhci_pointer=0;
+	ehci_pointer=0;
     pci_scan_all();
 
 	p("Setting IDT table...");
@@ -132,14 +144,18 @@ void start_lightningos(void) {
 	//load_fbn();
 
 	p("Initalizing mouse...");
-	clear_mouse_memory();
 	mouse_initalize();
+
+	p("Starting GUI...");
+	init_program_list();
+	draw_desktop();
+	create_hw_info();
+
+	//Show mouse and initalize variabiles
 	mouse_cycle=0;
 	mouse_x=0;
 	mouse_y=0;
 	handle_irq12=0;
+	clear_mouse_memory();
 	mouse_cursor_visible=1;
-
-	p("Starting GUI...");
-    start_gui();
 }
