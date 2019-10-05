@@ -17,7 +17,6 @@ struct down_line_programs_t {
 } down_line_programs[5];
 
 void start_hw_info(void);
-void start_pokus(void);
 
 void call_draw_program(uint32_t number) {
 	if(number==HW_INFO) {
@@ -25,10 +24,6 @@ void call_draw_program(uint32_t number) {
 		return;
 	}
 
-	if(number==POKUS) {
-		start_pokus();
-		return;
-	}
 }
 
 void draw_time(void) {
