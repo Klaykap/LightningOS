@@ -3,8 +3,6 @@
 #define HW_INFO_BASE_POSITION_OF_ELEMENTS_LINE 71
 #define HW_INFO_BASE_POSITION_OF_ELEMENTS_COLUMN 101
 
-uint32_t hw_info_window_id=0;
-
 void start_hw_info(void) {
 	draw_window(50, 100, 600, 400, "Hardware informations");
 
