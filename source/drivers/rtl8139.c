@@ -16,9 +16,7 @@
 
 uint32_t transmit_port_offset=0;
 
-uint16_t internet_offset=0;
-
-void init_card_rtl8139(void) {
+void init_card_rtl8139(uint32_t buffer) {
 	outb(internet_card_base + COMMAND_PORT, 0x10);
 	//wait
     for(int i=0; i<10000; i++) {
@@ -35,7 +33,7 @@ void init_card_rtl8139(void) {
 	outw(internet_card_base + INTERRUPT_STATUS_PORT, 0);
 	outw(internet_card_base + INTERRUPT_MASK_PORT, 0xFFFF);
 
-	outl(internet_card_base + BUFFER_PORT, INTERNET_BUFFER_MEMORY);
+	outl(internet_card_base + BUFFER_PORT, buffer);
 
 	transmit_port_offset=0;
 
@@ -53,41 +51,7 @@ void send_packet_rtl8139(uint32_t buffer, uint32_t lenght) {
 	}
 }
 
-void get_packet_rtl8139(void) {  //TODO: is this method right?
-	uint8_t *buffer = (uint8_t *) INTERNET_BUFFER_MEMORY;
-	uint16_t *buffer16 = (uint16_t *) INTERNET_BUFFER_MEMORY;
-	uint8_t *packet = (uint8_t *) INTERNET_PACKET_MEMORY;
-	uint16_t lenght=0;
-
-	for(int j=0; j<1000; j++) {
-		if(	inb(internet_card_base + COMMAND_PORT)==0 ) {
-			return;
-		}
-
-		//set CAPR
-		lenght=buffer16[1];
-		internet_offset += 4;
-		if( (internet_offset+lenght) > 0x2000) {
-			internet_offset=(lenght-(0x2000-internet_offset));
-			outw(internet_card_base + CURRENT_ADDR_PORT, internet_offset);
-		}
-		else {
-			internet_offset=(internet_offset+lenght);
-			outw(internet_card_base + CURRENT_ADDR_PORT, internet_offset);
-		}
-
-		//copy packet to memory
-		for(int i=0; i<lenght; i++) {
-			packet[i]=buffer[internet_offset];
-
-			internet_offset++;
-			if(internet_offset>=0x2000) {
-				internet_offset=0;
-			}
-		}
-
-	}
-}
+//void get_packet_rtl8139(void)  //TODO: write this method
 
 void irq_rtl8139(void) {
 	uint32_t interrupt_status=0;
@@ -95,7 +59,7 @@ void irq_rtl8139(void) {
 	interrupt_status = inw(internet_card_base + INTERRUPT_STATUS_PORT);
 
 	if(interrupt_status==0x01) {  //new packet is here
-		get_packet_rtl8139();
+		//get_packet_rtl8139();
 		outw(internet_card_base + INTERRUPT_STATUS_PORT, 0x0001);
 	}
 
