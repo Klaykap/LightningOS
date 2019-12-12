@@ -155,7 +155,6 @@ void start_lightningos(void) {
 	mouse_cycle=0;
 	mouse_x=0;
 	mouse_y=0;
-	handle_irq12=0;
 	clear_mouse_memory();
 	mouse_cursor_visible=1;
 }
