@@ -145,8 +145,6 @@ void irq1_handler(void) {
 }
 
 void irq2_handler(void) {
-	p("UHCI IRQ");
-	uhci_clear_irq(USB);
     outb(0x20, 0x20); //EOI
 
 }
