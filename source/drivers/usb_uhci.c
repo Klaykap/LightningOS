@@ -1,4 +1,4 @@
-//LIGHTNINGOS
+//CELEROS
 
 void wait(uint32_t miliseconds);
 
@@ -43,7 +43,7 @@ void write_uhci_frame_num(uint32_t usb, uint16_t value) {
 }
 
 void write_uhci_sofmod(uint32_t usb, uint16_t value) {
-    outl(uhci_base[usb] + UHCI_START_OF_FRAME, value);
+    outb(uhci_base[usb] + UHCI_START_OF_FRAME, value);
 }
 
 void write_uhci_sc1(uint32_t usb, uint16_t offset, uint16_t value) {
@@ -75,7 +75,7 @@ uint32_t read_uhci_frame_addr(uint32_t usb) {
 }
 
 uint16_t read_uhci_sofmod(uint32_t usb) {
-    return inl(uhci_base[usb] + UHCI_START_OF_FRAME);
+    return inb(uhci_base[usb] + UHCI_START_OF_FRAME);
 }
 
 uint16_t read_uhci_sc1(uint32_t usb, uint16_t offset) {
@@ -140,7 +140,7 @@ void uhci_reset(uint32_t usb) {
 
 	p("NUMBER OF UHCI PORTS");
 	pom=read_uhci_sc1(usb, 0);
-	for(int i=2; i<pom; i++) {
+	for(int i=0; i<pom; i++) {
 		if(read_uhci_sc1(usb, (i * 2))!=0 && read_uhci_sc1(usb, (i * 2))!=0xFFFF) {
 			num_of_uhci_ports=i;
 		}
@@ -153,7 +153,7 @@ void uhci_reset(uint32_t usb) {
 	uhci_disable_controller(usb);
 
 	p("SETTING UHCI FRAME ADDRESS/LENGHT/NUMBER");
-	write_uhci_sofmod(usb, 0x0040);
+	write_uhci_sofmod(usb, 0x40);
 	write_uhci_frame_addr(usb, (uint32_t)uhci_memory);
 	write_uhci_frame_num(usb, 0);
 
@@ -166,7 +166,6 @@ void uhci_reset(uint32_t usb) {
     uhci_enable_interrupts(usb);
 
 	p("Run UHCI port...");
-	//uhci_run(usb);
 	write_uhci_cmd(usb, BIT(0) | BIT(4) | BIT(6) | BIT(7));
 	wait(5);
 	write_uhci_cmd(usb, BIT(0) | BIT(6) | BIT(7));
