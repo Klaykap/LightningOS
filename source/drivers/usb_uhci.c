@@ -17,7 +17,16 @@ void wait(uint32_t miliseconds);
 #define UHCI_PACKET_OUT 0xE1
 #define UHCI_PACKET_SETUP 0x2D
 
-uint32_t uhci_memory[8192]; //is this right?
+struct uhci_td {
+	uint32_t next;
+	uint32_t status;
+	uint32_t header;
+	uint32_t address;
+	uint16_t reserved;
+} uhci_mem[1024];
+
+//uint32_t uhci_mem[50000];
+
 uint32_t num_of_uhci_ports=0;
 
 void write_uhci_cmd(uint32_t usb, uint16_t value) {
@@ -124,8 +133,18 @@ void uhci_reset_root_port(uint32_t usb, uint32_t port) {
 void uhci_reset(uint32_t usb) {
 	uint32_t pom=0;
 
+	p("clear UHCI memory...");
+	for(int i=0; i<1024; i++) {
+		uhci_mem[i].next=0;
+		uhci_mem[i].status=0;
+		uhci_mem[i].header=0;
+		uhci_mem[i].address=0;
+		uhci_mem[i].reserved=0;
+	}
+
 	p("UHCI base port");
 	ph(uhci_base[usb]);
+	ph((uint32_t)uhci_mem);
 
 	uhci_stop(usb);
 
@@ -152,7 +171,7 @@ void uhci_reset(uint32_t usb) {
 
 	p("SETTING UHCI FRAME ADDRESS/LENGHT/NUMBER");
 	write_uhci_sofmod(usb, 0x40);
-	write_uhci_frame_addr(usb, (uint32_t)uhci_memory);
+	write_uhci_frame_addr(usb, (uint32_t)uhci_mem);
 	write_uhci_frame_num(usb, 0);
 
 	p("reset root ports");
@@ -174,6 +193,21 @@ void uhci_reset(uint32_t usb) {
 
 	p("UHCI status:");
 	ph(read_uhci_sts(usb) & BIT(5));
+}
+
+void uhci_receive(uint32_t usb) {
+	uint32_t actual_frame=0;
+	p("UHCI TD POINTER");
+	actual_frame=read_uhci_frame_num(usb);
+	pv(actual_frame);
+
+	actual_frame=0;
+	p("TD");
+	pv(uhci_mem[actual_frame].next);
+	pv(uhci_mem[actual_frame].status);
+	pv(uhci_mem[actual_frame].header);
+	pv(uhci_mem[actual_frame].address);
+	pv(uhci_mem[actual_frame].reserved);
 }
 
 void uhci(void) {
