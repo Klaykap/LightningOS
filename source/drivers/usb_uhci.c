@@ -1,5 +1,3 @@
-//CELEROS
-
 void wait(uint32_t miliseconds);
 
 #define BIT(x) (1 << x)
